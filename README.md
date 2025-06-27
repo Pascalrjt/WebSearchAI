@@ -1,6 +1,6 @@
 # WebSearch AI 🔍
 
-> Change the way you discover and interact with information online
+> Change the ways you discover and interact with information online
 
 WebSearch AI is an AI-powered conversational search engine that provides direct, synthesized answers with citations instead of traditional link lists. Built with Next.js 15 and powered by Google Gemini, it creates a research assistant experience that makes information discovery more efficient and transparent.
 
@@ -27,7 +27,7 @@ WebSearch AI is an AI-powered conversational search engine that provides direct,
 1. **Clone the repository**
 
    ```bash
-   git clone thisrepo.git
+   git clone https://github.com/Pascalrjt/WebSearchAI.git
    cd websearch-ai
    ```
 
@@ -58,7 +58,7 @@ WebSearch AI uses a "Bring Your Own API Key" (BYOK) model for transparency and c
 
 1. Visit [Google AI Studio](https://aistudio.google.com/app/apikey)
 2. Create a new API key
-3. Copy the key (starts with `AIza...`)
+3. Copy the key
 
 #### 2. Google Custom Search Setup
 
