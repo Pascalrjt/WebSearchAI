@@ -2,12 +2,15 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Search, Send, Settings, MessageSquare, BookOpen, Lightbulb, FileText, ExternalLink } from "lucide-react"
+import { SetupWizard } from "@/components/setup-wizard"
+import { useApiKeys } from "@/lib/stores/api-keys"
+import Link from "next/link"
 
 interface Message {
   id: string
@@ -29,10 +32,17 @@ interface SearchFocus {
 }
 
 export default function WebSearchAI() {
+  const { hasKeys } = useApiKeys()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [isSearching, setIsSearching] = useState(false)
   const [selectedFocus, setSelectedFocus] = useState("general")
+  const [showSetup, setShowSetup] = useState(false)
+
+  useEffect(() => {
+    // Check if we need to show setup wizard
+    setShowSetup(!hasKeys)
+  }, [hasKeys])
 
   const searchFocuses: SearchFocus[] = [
     {
@@ -106,6 +116,16 @@ export default function WebSearchAI() {
     }, 2000)
   }
 
+  // Show setup wizard if no API keys
+  if (showSetup) {
+    return (
+      <SetupWizard 
+        onComplete={() => setShowSetup(false)}
+        onSkip={() => setShowSetup(false)}
+      />
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-600 via-purple-500 to-pink-500 bg-[length:400%_400%] animate-gradient p-4">
       <div className="max-w-4xl mx-auto min-h-screen flex flex-col py-4">
@@ -129,13 +149,15 @@ export default function WebSearchAI() {
                 <MessageSquare className="w-4 h-4 mr-2" />
                 Conversations
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-white hover:bg-white/30 hover:text-gray-100 hover:shadow-md transition-all duration-200 transform hover:scale-105"
-              >
-                <Settings className="w-4 h-4" />
-              </Button>
+              <Link href="/settings">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-white hover:bg-white/30 hover:text-gray-100 hover:shadow-md transition-all duration-200 transform hover:scale-105"
+                >
+                  <Settings className="w-4 h-4" />
+                </Button>
+              </Link>
             </div>
           </Card>
         </div>
@@ -171,7 +193,7 @@ export default function WebSearchAI() {
                 <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
                   <Search className="w-8 h-8 text-gray-800" />
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-2">Ask anything, get synthesized answers</h2>
+                <h2 className="text-2xl font-bold text-white mb-2">Ask anything, get answers</h2>
                 <p className="text-gray-400 max-w-md mx-auto">
                   WebSearch AI scours the web in real-time to provide you with comprehensive, cited answers to your
                   questions. Start a conversation below.
