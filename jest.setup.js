@@ -25,6 +25,11 @@ global.localStorage = localStorageMock
 // Mock fetch globally
 global.fetch = jest.fn()
 
+// Mock TextEncoder/TextDecoder for streaming tests
+const { TextEncoder, TextDecoder } = require('util')
+global.TextEncoder = TextEncoder
+global.TextDecoder = TextDecoder
+
 // Mock console.error to avoid noise in test output for expected errors
 const originalError = console.error
 beforeAll(() => {
