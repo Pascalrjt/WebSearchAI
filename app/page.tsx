@@ -7,9 +7,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Search, Send, Settings, MessageSquare, BookOpen, Lightbulb, FileText, ExternalLink } from "lucide-react"
+import { Search, Send, Settings, MessageSquare, BookOpen, Lightbulb, FileText, ExternalLink, Code, Heart, Scale } from "lucide-react"
 import { SetupWizard } from "@/components/setup-wizard"
 import { useApiKeys } from "@/lib/stores/api-keys"
+import { SearchOrchestrator } from "@/lib/api/orchestrator"
+import { SearchContext, SearchFocusMode } from "@/lib/types/api"
+import { useToast } from "@/hooks/use-toast"  
 import Link from "next/link"
 
 interface Message {
@@ -32,17 +35,43 @@ interface SearchFocus {
 }
 
 export default function WebSearchAI() {
-  const { hasKeys } = useApiKeys()
+  const { hasKeys, keys } = useApiKeys()
+  const { toast } = useToast()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [isSearching, setIsSearching] = useState(false)
   const [selectedFocus, setSelectedFocus] = useState("general")
   const [showSetup, setShowSetup] = useState(false)
+  const [orchestrator, setOrchestrator] = useState<SearchOrchestrator | null>(null)
 
   useEffect(() => {
     // Check if we need to show setup wizard
     setShowSetup(!hasKeys)
   }, [hasKeys])
+
+  useEffect(() => {
+    // Initialize orchestrator when API keys are available
+    if (hasKeys && keys?.geminiKey && keys?.customSearchKey && keys?.searchEngineId) {
+      try {
+        const newOrchestrator = new SearchOrchestrator({
+          geminiApiKey: keys.geminiKey,
+          customSearchApiKey: keys.customSearchKey,
+          searchEngineId: keys.searchEngineId,
+          maxSearchResults: 5
+        })
+        setOrchestrator(newOrchestrator)
+      } catch (error) {
+        console.error('Failed to initialize search orchestrator:', error)
+        toast({
+          title: "Configuration Error",
+          description: "Failed to initialize search. Please check your API keys.",
+          variant: "destructive"
+        })
+      }
+    } else {
+      setOrchestrator(null)
+    }
+  }, [hasKeys, keys, toast])
 
   const searchFocuses: SearchFocus[] = [
     {
@@ -69,16 +98,45 @@ export default function WebSearchAI() {
       icon: <FileText className="w-4 h-4" />,
       description: "Latest news and current events",
     },
+    {
+      id: "technical",
+      name: "Technical",
+      icon: <Code className="w-4 h-4" />,
+      description: "Documentation and technical resources",
+    },
+    {
+      id: "medical",
+      name: "Medical",
+      icon: <Heart className="w-4 h-4" />,
+      description: "Medical and health information",
+    },
+    {
+      id: "legal",
+      name: "Legal",
+      icon: <Scale className="w-4 h-4" />,
+      description: "Legal documents and regulations",
+    },
   ]
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!input.trim()) return
 
+    // Check if orchestrator is available
+    if (!orchestrator) {
+      toast({
+        title: "Configuration Required",
+        description: "Please configure your API keys in settings to start searching.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    const userQuery = input.trim()
     const userMessage: Message = {
       id: Date.now().toString(),
       type: "user",
-      content: input,
+      content: userQuery,
       timestamp: new Date(),
     }
 
@@ -86,34 +144,66 @@ export default function WebSearchAI() {
     setInput("")
     setIsSearching(true)
 
-    // Simulate AI response with sources
-    setTimeout(() => {
-      const assistantMessage: Message = {
+    try {
+      // Create search context
+      const searchContext: SearchContext = {
+        query: userQuery,
+        focusMode: selectedFocus as SearchFocusMode,
+        language: 'en',
+        region: 'US'
+      }
+
+      // Perform search using orchestrator
+      const result = await orchestrator.search(searchContext)
+
+      if (result.success && result.data) {
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          type: "assistant",
+          content: result.data.answer,
+          sources: result.data.sources.map(source => ({
+            title: source.title,
+            url: source.url,
+            snippet: source.snippet
+          })),
+          timestamp: new Date(),
+        }
+        setMessages((prev) => [...prev, assistantMessage])
+      } else {
+        // Handle search failure
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          type: "assistant",
+          content: `I apologize, but I encountered an error while searching for "${userQuery}". ${result.error?.message || 'Please try again or check your API configuration.'}`,
+          timestamp: new Date(),
+        }
+        setMessages((prev) => [...prev, errorMessage])
+        
+        toast({
+          title: "Search Error",
+          description: result.error?.message || "Failed to perform search. Please try again.",
+          variant: "destructive"
+        })
+      }
+    } catch (error) {
+      console.error('Search error:', error)
+      
+      const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        type: "assistant",
-        content: `Based on my search across the web, here's what I found about "${input}": This is a comprehensive answer that synthesizes information from multiple sources to provide you with accurate, up-to-date information. The response includes relevant context and addresses your specific query with detailed insights.`,
-        sources: [
-          {
-            title: "Comprehensive Guide - Example Source",
-            url: "https://example.com/guide",
-            snippet: "Detailed information about the topic with relevant context...",
-          },
-          {
-            title: "Research Paper - Academic Source",
-            url: "https://academic.example.com/paper",
-            snippet: "Scholarly perspective on the subject matter...",
-          },
-          {
-            title: "Latest Updates - News Source",
-            url: "https://news.example.com/article",
-            snippet: "Recent developments and current information...",
-          },
-        ],
+        type: "assistant",  
+        content: `I encountered an unexpected error while searching for "${userQuery}". Please try again or check your internet connection.`,
         timestamp: new Date(),
       }
-      setMessages((prev) => [...prev, assistantMessage])
+      setMessages((prev) => [...prev, errorMessage])
+      
+      toast({
+        title: "Unexpected Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      })
+    } finally {
       setIsSearching(false)
-    }, 2000)
+    }
   }
 
   // Show setup wizard if no API keys

@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { ApiKeyConfig, ApiKeyStatus, ApiKeyUsage, ApiKeySettings } from '@/lib/types/api-keys'
 import { encryptApiKey, decryptApiKey, isValidEncryptedKey } from '@/lib/utils/encryption'
 
@@ -221,5 +222,3 @@ export function useApiKeys() {
   }
 }
 
-// Fix import issue
-import React from 'react'

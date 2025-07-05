@@ -9,6 +9,45 @@ describe('CustomSearchClient', () => {
   const mockApiKey = 'test-api-key'
   const mockSearchEngineId = 'test-search-engine-id'
 
+  const mockResponse: CustomSearchResponse = {
+    kind: 'customsearch#search',
+    url: { type: 'application/json', template: 'test' },
+    queries: {
+      request: [{
+        title: 'Test',
+        totalResults: '1000',
+        searchTerms: 'test query',
+        count: 10,
+        startIndex: 1,
+        inputEncoding: 'utf8',
+        outputEncoding: 'utf8',
+        safe: 'off',
+        cx: mockSearchEngineId
+      }]
+    },
+    context: { title: 'Test Context' },
+    searchInformation: {
+      searchTime: 0.5,
+      formattedSearchTime: '0.50',
+      totalResults: '1000',
+      formattedTotalResults: '1,000'
+    },
+    items: [
+      {
+        kind: 'customsearch#result',
+        title: 'Test Result',
+        htmlTitle: '<b>Test</b> Result',
+        link: 'https://example.com',
+        displayLink: 'example.com',
+        snippet: 'This is a test result snippet',
+        htmlSnippet: 'This is a <b>test</b> result snippet',
+        formattedUrl: 'https://example.com',
+        htmlFormattedUrl: 'https://example.com',
+        cacheId: 'test-cache-id'
+      }
+    ]
+  }
+
   beforeEach(() => {
     client = new CustomSearchClient({ 
       apiKey: mockApiKey,
@@ -37,44 +76,6 @@ describe('CustomSearchClient', () => {
   })
 
   describe('search', () => {
-    const mockResponse: CustomSearchResponse = {
-      kind: 'customsearch#search',
-      url: { type: 'application/json', template: 'test' },
-      queries: {
-        request: [{
-          title: 'Test',
-          totalResults: '1000',
-          searchTerms: 'test query',
-          count: 10,
-          startIndex: 1,
-          inputEncoding: 'utf8',
-          outputEncoding: 'utf8',
-          safe: 'off',
-          cx: mockSearchEngineId
-        }]
-      },
-      context: { title: 'Test Context' },
-      searchInformation: {
-        searchTime: 0.5,
-        formattedSearchTime: '0.50',
-        totalResults: '1000',
-        formattedTotalResults: '1,000'
-      },
-      items: [
-        {
-          kind: 'customsearch#result',
-          title: 'Test Result',
-          htmlTitle: '<b>Test</b> Result',
-          link: 'https://example.com',
-          displayLink: 'example.com',
-          snippet: 'This is a test result snippet',
-          htmlSnippet: 'This is a <b>test</b> result snippet',
-          formattedUrl: 'https://example.com',
-          htmlFormattedUrl: 'https://example.com',
-          cacheId: 'test-cache-id'
-        }
-      ]
-    }
 
     it('should perform search successfully', async () => {
       (fetch as jest.Mock).mockResolvedValueOnce({

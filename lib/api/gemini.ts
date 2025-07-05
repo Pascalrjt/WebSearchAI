@@ -128,7 +128,13 @@ export class GeminiClient {
     })
 
     if (!response.success || !response.data) {
-      return response as ApiResponse<string>
+      return {
+        error: response.error || {
+          message: 'Failed to generate content',
+          code: 'GENERATION_FAILED'
+        },
+        success: false
+      }
     }
 
     try {
