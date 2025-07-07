@@ -35,7 +35,7 @@ interface SearchFocus {
 }
 
 export default function WebSearchAI() {
-  const { hasKeys, keys } = useApiKeys()
+  const { hasKeys, keys, isHydrated } = useApiKeys()
   const { toast } = useToast()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
@@ -45,13 +45,15 @@ export default function WebSearchAI() {
   const [orchestrator, setOrchestrator] = useState<SearchOrchestrator | null>(null)
 
   useEffect(() => {
-    // Check if we need to show setup wizard
-    setShowSetup(!hasKeys)
-  }, [hasKeys])
+    // Check if we need to show setup wizard only after hydration
+    if (isHydrated) {
+      setShowSetup(!hasKeys)
+    }
+  }, [hasKeys, isHydrated])
 
   useEffect(() => {
-    // Initialize orchestrator when API keys are available
-    if (hasKeys && keys?.geminiKey && keys?.customSearchKey && keys?.searchEngineId) {
+    // Initialize orchestrator when API keys are available and hydrated
+    if (isHydrated && hasKeys && keys?.geminiKey && keys?.customSearchKey && keys?.searchEngineId) {
       try {
         const newOrchestrator = new SearchOrchestrator({
           geminiApiKey: keys.geminiKey,
@@ -71,7 +73,7 @@ export default function WebSearchAI() {
     } else {
       setOrchestrator(null)
     }
-  }, [hasKeys, keys, toast])
+  }, [hasKeys, keys, toast, isHydrated])
 
   const searchFocuses: SearchFocus[] = [
     {
@@ -204,6 +206,15 @@ export default function WebSearchAI() {
     } finally {
       setIsSearching(false)
     }
+  }
+
+  // Show loading during hydration
+  if (!isHydrated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-purple-500 to-pink-500 flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-2 border-white border-t-transparent rounded-full"></div>
+      </div>
+    )
   }
 
   // Show setup wizard if no API keys

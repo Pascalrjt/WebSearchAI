@@ -139,7 +139,7 @@ class ApiKeyStore {
     this.listeners.forEach(callback => callback())
   }
 
-  private getDefaultStatus(): ApiKeyStatus {
+  getDefaultStatus(): ApiKeyStatus {
     return {
       gemini: {
         isValid: false,
@@ -152,7 +152,7 @@ class ApiKeyStore {
     }
   }
 
-  private getDefaultUsage(): ApiKeyUsage {
+  getDefaultUsage(): ApiKeyUsage {
     const now = new Date()
     return {
       gemini: {
@@ -175,11 +175,13 @@ export const apiKeyStore = new ApiKeyStore()
 // React hook for using API keys
 export function useApiKeys() {
   const [keys, setKeys] = React.useState<ApiKeyConfig | null>(null)
-  const [status, setStatus] = React.useState<ApiKeyStatus>(apiKeyStore.getStatus())
-  const [usage, setUsage] = React.useState<ApiKeyUsage>(apiKeyStore.getUsage())
+  const [status, setStatus] = React.useState<ApiKeyStatus>(apiKeyStore.getDefaultStatus())
+  const [usage, setUsage] = React.useState<ApiKeyUsage>(apiKeyStore.getDefaultUsage())
+  const [isHydrated, setIsHydrated] = React.useState(false)
 
   React.useEffect(() => {
-    // Initial load
+    // Mark as hydrated and load from localStorage
+    setIsHydrated(true)
     setKeys(apiKeyStore.getApiKeys())
     setStatus(apiKeyStore.getStatus())
     setUsage(apiKeyStore.getUsage())
@@ -214,7 +216,8 @@ export function useApiKeys() {
     keys,
     status,
     usage,
-    hasKeys: apiKeyStore.hasApiKeys(),
+    hasKeys: isHydrated ? apiKeyStore.hasApiKeys() : false,
+    isHydrated,
     saveKeys,
     clearKeys,
     updateStatus,
