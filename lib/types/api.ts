@@ -148,3 +148,19 @@ export interface SearchContext {
   region?: string
   timeFilter?: string
 }
+
+// Iterative Search Analysis Types
+export interface ResultAnalysis {
+  completeness: number // 0-100 score
+  informationGaps: string[]
+  gapCategories: {
+    factual: string[]      // Missing facts/data
+    contextual: string[]   // Missing background/context  
+    verification: string[] // Contradictory information
+    depth: string[]        // Insufficient detail
+  }
+  followupTopics: string[]
+  confidenceLevel: number // 0-100 confidence in analysis
+  needsMoreSearch: boolean
+  reasoning: string // Explanation of the analysis
+}
